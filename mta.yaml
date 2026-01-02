@@ -143,7 +143,6 @@ modules:
               URL: ~{srv-api/srv-url}
               Authentication: OAuth2UserTokenExchange
               ServiceInstanceName: simplecap-auth
-              ForwardAuthToken: true
               sap.cloud.service: simplecap
               HTML5.DynamicDestination: true
               WebIDEEnabled: true
