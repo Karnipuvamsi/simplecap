@@ -83,7 +83,6 @@
 #       service: destination
 #       service-plan: lite
 
-
 _schema-version: 3.3.0
 ID: simplecap
 version: 1.0.0
@@ -134,6 +133,7 @@ modules:
         parameters:
           content-target: true
       - name: srv-api
+      - name: app-api
       - name: simplecap-auth
     parameters:
       content:
@@ -147,9 +147,39 @@ modules:
               HTML5.DynamicDestination: true
               WebIDEEnabled: true
               WebIDEUsage: odata_gen
+
+            - Name: simplecap-approuter
+              URL: https://~{app-api/app-uri}
+              # URL: ~{app-api/app-protocol}://~{app-api/app-uri}
+              Authentication: OAuth2UserTokenExchange
+              ServiceInstanceName: simplecap-auth
+              sap.cloud.service: simplecap
+              HTML5.DynamicDestination: true
+              WebIDEEnabled: true
+              WebIDEUsage: odata_gen
           existing_destinations_policy: update
     build-parameters:
       no-source: true
+  - name: simplecap
+    type: approuter.nodejs
+    path: app/router
+    parameters:
+      keep-existing-routes: true
+      disk-quota: 256M
+      memory: 256M
+    requires:
+      - name: srv-api
+        group: destinations
+        properties:
+          name: srv-api # must be used in xs-app.json as well
+          url: ~{srv-url}
+          forwardAuthToken: true
+      - name: simplecap-auth
+    provides:
+      - name: app-api
+        properties:
+          app-protocol: ${protocol}
+          app-uri: ${default-uri}
 
 resources:
   # ---------------- XSUAA ----------------
@@ -163,6 +193,11 @@ resources:
       config:
         xsappname: simplecap-xsapp
         tenant-mode: dedicated
+        oauth2-configuration:
+          redirect-uris:
+            - https://*~{app-api/app-uri}/**
+    requires:
+      - name: app-api
 
   # ---------------- HANA HDI ----------------
   - name: simplecap-db
